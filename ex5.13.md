@@ -31,7 +31,7 @@ modify the subprocedure of assemble--*update-insts!*
          ((machine 'allocate-register) (cadar inst))))
        (find-reg (cdr inst) machine))))
        
-;modify the *allocate-register* of *make-new-machine*
+;modify the allocate-register of make-new-machine
 (define (allocate-register name)
         (if (not (assoc name register-table))         ;allocate when not find
             (set! register-table
