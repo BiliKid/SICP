@@ -23,12 +23,21 @@ modify the subprocedure of assemble--*update-insts!*
 (define (find-reg inst machine)
   (if (null? inst)
       'done
-      (cond
+      (begin
+       (cond
         ((symbol? (car inst))
-         ((machine 'allocate-register (car inst))))
+         ((machine 'allocate-register) (car inst)))
         ((register-exp? (car inst))
-         ((machine 'allocate-register (cadar inst))))
-        (find-reg (cdr inst)))))
+         ((machine 'allocate-register) (cadar inst))))
+       (find-reg (cdr inst) machine))))
+       
+;modify the *allocate-register* of *make-new-machine*
+(define (allocate-register name)
+        (if (not (assoc name register-table))         ;allocate when not find
+            (set! register-table
+                  (cons (list name (make-register name))
+                        register-table)))
+        'register-allocated)
 
 ```
 
