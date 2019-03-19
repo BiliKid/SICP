@@ -1,13 +1,14 @@
 ```
-Exercise 5.15.  Add instruction counting to the register machine simulation. That is, have the machine model keep track of the number of instructions executed. Extend the machine model's interface to accept a new message that prints the value of the instruction count and resets the count to zero.
+Exercise 5.16.  Augment the simulator to provide for instruction tracing. That is, before each instruction is executed, the simulator should print the text of the instruction. Make the machine model accept trace-on and trace-off messages to turn tracing on and off.
 ```
-modify the *make-new-machine*, add two machine model's interface.
+modify the *make-new-machine*
+
 ```
 (define (make-new-machine)
   (let ((pc (make-register 'pc))
         (flag (make-register 'flag))
         (stack (make-stack))
-        (counter (make-register 'counter))
+        (trace (make-register 'trace))
         (the-instruction-sequence '()))
     (let ((the-ops
            (list (list 'initialize-stack
@@ -17,7 +18,7 @@ modify the *make-new-machine*, add two machine model's interface.
                  (list 'print-stack-statistics
                        (lambda () (stack 'print-statistics)))))
           (register-table
-           (list (list 'pc pc) (list 'flag flag) (list 'counter counter))))
+           (list (list 'pc pc) (list 'flag flag) (list 'trace trace))))
       (define (allocate-register name)
         (if (assoc name register-table)
             (error "Multiply defined register: " name)
@@ -34,14 +35,16 @@ modify the *make-new-machine*, add two machine model's interface.
         (let ((insts (get-contents pc)))
           (if (null? insts)
               'done
-              (begin
-                ((instruction-execution-proc (car insts)))
-                (execute)
-                (set-contents! counter (+ (get-contents counter) 1))))))
+              (let ((inst (car insts)))
+                (if (eq? (get-contents trace) 'on)
+                    (begin
+                      (display (car inst))
+                      (newline)))
+                ((instruction-execution-proc inst))
+                (execute)))))
       (define (dispatch message)
         (cond ((eq? message 'start)
                (set-contents! pc the-instruction-sequence)
-               (set-contents! counter 0)
                (execute))
               ((eq? message 'install-instruction-sequence)
                (lambda (seq) (set! the-instruction-sequence seq)))
@@ -51,9 +54,8 @@ modify the *make-new-machine*, add two machine model's interface.
                (lambda (ops) (set! the-ops (append the-ops ops))))
               ((eq? message 'stack) stack)
               ((eq? message 'operations) the-ops)
-              ((eq? message 'print-counter) (display (list 'counter '= (get-contents counter))))
-              ((eq? message 'reset-counter) (set-contents! counter 0))
+              ((eq? message 'trace-off) (set-contents! trace 'off))
+              ((eq? message 'trace-on) (set-contents! trace 'on))
               (else (error "Unknown request -- MACHINE" message))))
       dispatch)))
-
 ```
